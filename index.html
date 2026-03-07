@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Détecteur de Mouvement</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;600&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --panel: #12121a;
+    --border: #1e1e2e;
+    --accent: #00ff88;
+    --accent2: #ff3860;
+    --text: #e8e8f0;
+    --muted: #5a5a7a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  header {
+    width: 100%;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    z-index: 1;
+  }
+
+  .logo-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 12px var(--accent);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  header h1 {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .status-pill {
+    margin-left: auto;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--muted);
+    color: var(--muted);
+    transition: all 0.3s;
+  }
+
+  .status-pill.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: 0 0 10px rgba(0,255,136,0.2);
+  }
+
+  .status-pill.motion {
+    border-color: var(--accent2);
+    color: var(--accent2);
+    box-shadow: 0 0 10px rgba(255,56,96,0.3);
+    animation: blink 0.5s ease-in-out infinite alternate;
+  }
+
+  @keyframes blink {
+    from { opacity: 1; }
+    to { opacity: 0.5; }
+  }
+
+  .container {
+    width: 100%;
+    max-width: 700px;
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Camera feed */
+  .camera-wrapper {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: #000;
+    aspect-ratio: 16/9;
+  }
+
+  #cameraFeed {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transform: scaleX(-1); /* mirror */
+  }
+
+  #diffCanvas {
+    display: none;
+  }
+
+  /* Motion overlay */
+  .motion-overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+    border: 2px solid var(--accent2);
+    box-shadow: inset 0 0 40px rgba(255,56,96,0.15);
+  }
+
+  .motion-overlay.triggered {
+    opacity: 1;
+    animation: scan 0.8s ease-in-out;
+  }
+
+  @keyframes scan {
+    0% { box-shadow: inset 0 0 40px rgba(255,56,96,0.15); }
+    50% { box-shadow: inset 0 0 80px rgba(255,56,96,0.3); }
+    100% { box-shadow: inset 0 0 40px rgba(255,56,96,0.15); }
+  }
+
+  /* Corner decorations */
+  .corner {
+    position: absolute;
+    width: 20px; height: 20px;
+    border-color: var(--accent);
+    border-style: solid;
+    opacity: 0.6;
+  }
+  .corner.tl { top: 8px; left: 8px; border-width: 2px 0 0 2px; }
+  .corner.tr { top: 8px; right: 8px; border-width: 2px 2px 0 0; }
+  .corner.bl { bottom: 8px; left: 8px; border-width: 0 0 2px 2px; }
+  .corner.br { bottom: 8px; right: 8px; border-width: 0 2px 2px 0; }
+
+  /* Level meter */
+  .motion-bar-wrapper {
+    padding: 2px 8px 4px;
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+    background: rgba(10,10,15,0.7);
+    border-radius: 6px;
+    backdrop-filter: blur(4px);
+  }
+
+  .motion-bar-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    margin-bottom: 3px;
+  }
+
+  .motion-bar-track {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .motion-bar-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent), #00ccff);
+    transition: width 0.1s, background 0.2s;
+  }
+
+  .motion-bar-fill.high {
+    background: linear-gradient(90deg, #ffaa00, var(--accent2));
+  }
+
+  /* Video player panel */
+  .video-panel {
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    overflow: hidden;
+  }
+
+  .video-panel-header {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .video-panel-header span {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .indicator {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: all 0.3s;
+  }
+
+  .indicator.playing {
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  #videoPlayer {
+    width: 100%;
+    aspect-ratio: 16/9;
+    display: block;
+    background: #000;
+  }
+
+  /* Upload zone */
+  .upload-zone {
+    margin: 16px;
+    border: 1.5px dashed var(--border);
+    border-radius: 8px;
+    padding: 28px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .upload-zone:hover, .upload-zone.drag {
+    border-color: var(--accent);
+    background: rgba(0,255,136,0.03);
+  }
+
+  .upload-icon {
+    font-size: 28px;
+    opacity: 0.5;
+  }
+
+  .upload-zone p {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .upload-zone strong {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  #videoFileInput { display: none; }
+
+  /* Controls */
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .btn {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,255,136,0.05);
+  }
+
+  .btn.primary {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,255,136,0.08);
+  }
+
+  .btn.primary:hover {
+    background: rgba(0,255,136,0.15);
+    box-shadow: 0 0 20px rgba(0,255,136,0.1);
+  }
+
+  .btn.danger {
+    border-color: var(--accent2);
+    color: var(--accent2);
+    background: rgba(255,56,96,0.08);
+  }
+
+  .btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  /* Sensitivity slider */
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--panel);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+
+  .slider-row label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    white-space: nowrap;
+    text-transform: uppercase;
+    min-width: 90px;
+  }
+
+  input[type=range] {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px rgba(0,255,136,0.5);
+    cursor: pointer;
+  }
+
+  .slider-value {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    min-width: 30px;
+    text-align: right;
+  }
+
+  /* Log */
+  .log {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    padding: 12px 16px;
+    background: var(--panel);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    height: 60px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 3px;
+  }
+
+  .log-entry { opacity: 0.8; }
+  .log-entry.alert { color: var(--accent2); opacity: 1; }
+  .log-entry.ok { color: var(--accent); opacity: 1; }
+
+  /* Start screen */
+  #startScreen {
+    position: absolute;
+    inset: 0;
+    background: rgba(10,10,15,0.92);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    border-radius: 12px;
+    z-index: 10;
+    backdrop-filter: blur(4px);
+  }
+
+  #startScreen p {
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+    padding: 0 24px;
+  }
+
+  #startScreen h2 {
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    letter-spacing: 0.1em;
+    color: var(--text);
+  }
+
+  .start-btn {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    padding: 14px 28px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+
+  .start-btn:hover {
+    transform: scale(1.04);
+    box-shadow: 0 0 24px rgba(0,255,136,0.4);
+  }
+
+  /* Cooldown badge */
+  #cooldownBadge {
+    display: none;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    padding: 3px 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-left: auto;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-dot"></div>
+  <h1>Motion Trigger</h1>
+  <div class="status-pill" id="statusPill">INACTIF</div>
+</header>
+
+<div class="container">
+
+  <!-- Camera -->
+  <div class="camera-wrapper">
+    <video id="cameraFeed" autoplay playsinline muted></video>
+    <canvas id="diffCanvas"></canvas>
+    <div class="motion-overlay" id="motionOverlay"></div>
+    <div class="corner tl"></div>
+    <div class="corner tr"></div>
+    <div class="corner bl"></div>
+    <div class="corner br"></div>
+    <div class="motion-bar-wrapper">
+      <div class="motion-bar-label">NIVEAU DE MOUVEMENT</div>
+      <div class="motion-bar-track">
+        <div class="motion-bar-fill" id="motionBar"></div>
+      </div>
+    </div>
+    <div id="startScreen">
+      <h2>CAMÉRA REQUISE</h2>
+      <p>Autorisez l'accès à la caméra pour activer la détection de mouvement.</p>
+      <button class="start-btn" onclick="startCamera()">ACTIVER LA CAMÉRA</button>
+    </div>
+  </div>
+
+  <!-- Video player -->
+  <div class="video-panel">
+    <div class="video-panel-header">
+      <div class="indicator" id="playIndicator"></div>
+      <span>Vidéo déclenchée</span>
+      <span id="cooldownBadge">cooldown</span>
+    </div>
+    <video id="videoPlayer" controls loop playsinline>
+      <source src="" type="video/mp4">
+    </video>
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('videoFileInput').click()">
+      <div class="upload-icon">🎬</div>
+      <p><strong>Choisir une vidéo</strong></p>
+      <p>Appuyez ici ou glissez un fichier vidéo</p>
+      <input type="file" id="videoFileInput" accept="video/*">
+    </div>
+  </div>
+
+  <!-- Sensitivity -->
+  <div class="slider-row">
+    <label>Sensibilité</label>
+    <input type="range" id="sensitivitySlider" min="1" max="100" value="20">
+    <span class="slider-value" id="sensitivityValue">20</span>
+  </div>
+
+  <div class="slider-row">
+    <label>Cooldown (s)</label>
+    <input type="range" id="cooldownSlider" min="2" max="30" value="5">
+    <span class="slider-value" id="cooldownValue">5s</span>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="btn primary" id="toggleBtn" onclick="toggleDetection()" disabled>DÉMARRER</button>
+    <button class="btn" id="testBtn" onclick="testTrigger()">TEST DÉCLENCHEMENT</button>
+  </div>
+
+  <!-- Log -->
+  <div class="log" id="logBox">
+    <div class="log-entry">— Système prêt. Activez la caméra.</div>
+  </div>
+
+</div>
+
+<script>
+  const video = document.getElementById('cameraFeed');
+  const canvas = document.getElementById('diffCanvas');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const videoPlayer = document.getElementById('videoPlayer');
+  const motionBar = document.getElementById('motionBar');
+  const motionOverlay = document.getElementById('motionOverlay');
+  const statusPill = document.getElementById('statusPill');
+  const playIndicator = document.getElementById('playIndicator');
+  const toggleBtn = document.getElementById('toggleBtn');
+  const logBox = document.getElementById('logBox');
+  const cooldownBadge = document.getElementById('cooldownBadge');
+
+  let stream = null;
+  let detecting = false;
+  let animFrame = null;
+  let prevData = null;
+  let cooldown = false;
+  let cooldownTimer = null;
+  let videoLoaded = false;
+
+  // Sliders
+  const sensSlider = document.getElementById('sensitivitySlider');
+  const sensValue = document.getElementById('sensitivityValue');
+  const coolSlider = document.getElementById('cooldownSlider');
+  const coolValue = document.getElementById('cooldownValue');
+
+  sensSlider.addEventListener('input', () => { sensValue.textContent = sensSlider.value; });
+  coolSlider.addEventListener('input', () => { coolValue.textContent = coolSlider.value + 's'; });
+
+  // File input
+  document.getElementById('videoFileInput').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    videoPlayer.src = url;
+    videoPlayer.load();
+    videoLoaded = true;
+    document.getElementById('uploadZone').style.display = 'none';
+    log('Vidéo chargée : ' + file.name, 'ok');
+    if (stream) toggleBtn.disabled = false;
+  });
+
+  // Drag and drop
+  const uploadZone = document.getElementById('uploadZone');
+  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag'); });
+  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag'));
+  uploadZone.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadZone.classList.remove('drag');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('video/')) {
+      const url = URL.createObjectURL(file);
+      videoPlayer.src = url;
+      videoPlayer.load();
+      videoLoaded = true;
+      uploadZone.style.display = 'none';
+      log('Vidéo chargée : ' + file.name, 'ok');
+      if (stream) toggleBtn.disabled = false;
+    }
+  });
+
+  async function startCamera() {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } },
+        audio: false
+      });
+      video.srcObject = stream;
+      document.getElementById('startScreen').style.display = 'none';
+      log('Caméra activée', 'ok');
+      statusPill.textContent = 'CAMÉRA OK';
+      statusPill.classList.add('active');
+      if (videoLoaded) toggleBtn.disabled = false;
+      else {
+        toggleBtn.disabled = false; // allow start even without video (will show alert)
+      }
+    } catch (err) {
+      log('Erreur caméra : ' + err.message, 'alert');
+      document.getElementById('startScreen').querySelector('p').textContent =
+        'Accès refusé. Vérifiez les permissions de la caméra dans vos réglages.';
+    }
+  }
+
+  function toggleDetection() {
+    if (!detecting) {
+      if (!videoLoaded) {
+        log('⚠ Chargez d\'abord une vidéo !', 'alert');
+        return;
+      }
+      detecting = true;
+      prevData = null;
+      toggleBtn.textContent = 'ARRÊTER';
+      toggleBtn.classList.add('danger');
+      statusPill.textContent = 'SURVEILLANCE';
+      statusPill.classList.remove('active');
+      statusPill.classList.add('active');
+      log('Détection démarrée', 'ok');
+      detectLoop();
+    } else {
+      stopDetection();
+    }
+  }
+
+  function stopDetection() {
+    detecting = false;
+    if (animFrame) cancelAnimationFrame(animFrame);
+    toggleBtn.textContent = 'DÉMARRER';
+    toggleBtn.classList.remove('danger');
+    statusPill.textContent = 'PAUSE';
+    statusPill.classList.remove('motion');
+    motionBar.style.width = '0%';
+    log('Détection arrêtée', '');
+  }
+
+  function detectLoop() {
+    if (!detecting) return;
+
+    const W = 160, H = 90;
+    canvas.width = W; canvas.height = H;
+
+    ctx.drawImage(video, 0, 0, W, H);
+    const frame = ctx.getImageData(0, 0, W, H);
+
+    if (prevData) {
+      let diff = 0;
+      const len = frame.data.length;
+      for (let i = 0; i < len; i += 4) {
+        const dr = Math.abs(frame.data[i]   - prevData[i]);
+        const dg = Math.abs(frame.data[i+1] - prevData[i+1]);
+        const db = Math.abs(frame.data[i+2] - prevData[i+2]);
+        diff += (dr + dg + db) / 3;
+      }
+      const pixels = W * H;
+      const avg = diff / pixels; // 0-255
+      const pct = Math.min(100, (avg / 255) * 100 * 8);
+
+      motionBar.style.width = pct + '%';
+      motionBar.classList.toggle('high', pct > 50);
+
+      const threshold = (101 - sensSlider.value) * 0.3; // lower = more sensitive
+      if (avg > threshold && !cooldown) {
+        triggerMotion();
+      }
+    }
+
+    prevData = frame.data.slice();
+    animFrame = requestAnimationFrame(detectLoop);
+  }
+
+  function triggerMotion() {
+    cooldown = true;
+    log('🔴 MOUVEMENT DÉTECTÉ — vidéo déclenchée', 'alert');
+
+    statusPill.textContent = 'MOUVEMENT !';
+    statusPill.className = 'status-pill motion';
+
+    motionOverlay.classList.add('triggered');
+    setTimeout(() => motionOverlay.classList.remove('triggered'), 800);
+
+    // Play video
+    videoPlayer.currentTime = 0;
+    videoPlayer.play().catch(e => log('Lecture : ' + e.message, 'alert'));
+    playIndicator.classList.add('playing');
+
+    videoPlayer.onended = () => {
+      playIndicator.classList.remove('playing');
+    };
+
+    // Cooldown
+    const cd = parseInt(coolSlider.value);
+    cooldownBadge.style.display = 'block';
+    let remaining = cd;
+    cooldownBadge.textContent = 'cooldown ' + remaining + 's';
+
+    cooldownTimer = setInterval(() => {
+      remaining--;
+      cooldownBadge.textContent = 'cooldown ' + remaining + 's';
+      if (remaining <= 0) {
+        clearInterval(cooldownTimer);
+        cooldown = false;
+        cooldownBadge.style.display = 'none';
+        statusPill.textContent = 'SURVEILLANCE';
+        statusPill.className = 'status-pill active';
+        log('Prêt pour la prochaine détection', 'ok');
+      }
+    }, 1000);
+  }
+
+  function testTrigger() {
+    if (!videoLoaded) {
+      log('⚠ Chargez d\'abord une vidéo !', 'alert');
+      return;
+    }
+    if (cooldown) {
+      log('En cooldown, patientez...', '');
+      return;
+    }
+    log('TEST manuel déclenché', 'ok');
+    triggerMotion();
+  }
+
+  function log(msg, type = '') {
+    const entry = document.createElement('div');
+    entry.className = 'log-entry' + (type ? ' ' + type : '');
+    const time = new Date().toLocaleTimeString('fr', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    entry.textContent = '[' + time + '] ' + msg;
+    logBox.insertBefore(entry, logBox.firstChild);
+    // Keep log short
+    while (logBox.children.length > 20) logBox.removeChild(logBox.lastChild);
+  }
+</script>
+</body>
+</html>
