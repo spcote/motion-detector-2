@@ -13,6 +13,7 @@
     --border: #1e1e2e;
     --accent: #00ff88;
     --accent2: #ff3860;
+    --accent3: #ffaa00;
     --text: #e8e8f0;
     --muted: #5a5a7a;
   }
@@ -30,7 +31,6 @@
     overflow-x: hidden;
   }
 
-  /* Animated grid background */
   body::before {
     content: '';
     position: fixed;
@@ -87,23 +87,10 @@
     transition: all 0.3s;
   }
 
-  .status-pill.active {
-    border-color: var(--accent);
-    color: var(--accent);
-    box-shadow: 0 0 10px rgba(0,255,136,0.2);
-  }
+  .status-pill.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px rgba(0,255,136,0.2); }
+  .status-pill.motion { border-color: var(--accent2); color: var(--accent2); box-shadow: 0 0 10px rgba(255,56,96,0.3); animation: blink 0.5s ease-in-out infinite alternate; }
 
-  .status-pill.motion {
-    border-color: var(--accent2);
-    color: var(--accent2);
-    box-shadow: 0 0 10px rgba(255,56,96,0.3);
-    animation: blink 0.5s ease-in-out infinite alternate;
-  }
-
-  @keyframes blink {
-    from { opacity: 1; }
-    to { opacity: 0.5; }
-  }
+  @keyframes blink { from { opacity: 1; } to { opacity: 0.5; } }
 
   .container {
     width: 100%;
@@ -116,7 +103,6 @@
     z-index: 1;
   }
 
-  /* Camera feed */
   .camera-wrapper {
     position: relative;
     border-radius: 12px;
@@ -126,349 +112,172 @@
     aspect-ratio: 16/9;
   }
 
-  #cameraFeed {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    transform: scaleX(-1); /* mirror */
-  }
+  #cameraFeed { width: 100%; height: 100%; object-fit: cover; display: block; transform: scaleX(-1); }
+  #diffCanvas { display: none; }
 
-  #diffCanvas {
-    display: none;
-  }
-
-  /* Motion overlay */
-  .motion-overlay {
+  .rec-badge {
     position: absolute;
-    inset: 0;
-    border-radius: 12px;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s;
+    top: 12px; left: 12px;
+    display: none;
+    align-items: center;
+    gap: 6px;
+    background: rgba(10,10,15,0.82);
+    border: 1px solid var(--accent2);
+    border-radius: 6px;
+    padding: 4px 10px;
+    backdrop-filter: blur(4px);
+    z-index: 5;
+  }
+  .rec-badge.visible { display: flex; }
+  .rec-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent2); box-shadow: 0 0 6px var(--accent2); animation: blink 0.6s ease-in-out infinite alternate; }
+  .rec-badge span { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--accent2); letter-spacing: 0.08em; }
+
+  .motion-overlay {
+    position: absolute; inset: 0; border-radius: 12px;
+    pointer-events: none; opacity: 0; transition: opacity 0.2s;
     border: 2px solid var(--accent2);
     box-shadow: inset 0 0 40px rgba(255,56,96,0.15);
   }
-
-  .motion-overlay.triggered {
-    opacity: 1;
-    animation: scan 0.8s ease-in-out;
-  }
-
+  .motion-overlay.triggered { opacity: 1; animation: scan 0.8s ease-in-out; }
   @keyframes scan {
     0% { box-shadow: inset 0 0 40px rgba(255,56,96,0.15); }
     50% { box-shadow: inset 0 0 80px rgba(255,56,96,0.3); }
     100% { box-shadow: inset 0 0 40px rgba(255,56,96,0.15); }
   }
 
-  /* Corner decorations */
-  .corner {
-    position: absolute;
-    width: 20px; height: 20px;
-    border-color: var(--accent);
-    border-style: solid;
-    opacity: 0.6;
-  }
+  .corner { position: absolute; width: 20px; height: 20px; border-color: var(--accent); border-style: solid; opacity: 0.6; }
   .corner.tl { top: 8px; left: 8px; border-width: 2px 0 0 2px; }
   .corner.tr { top: 8px; right: 8px; border-width: 2px 2px 0 0; }
   .corner.bl { bottom: 8px; left: 8px; border-width: 0 0 2px 2px; }
   .corner.br { bottom: 8px; right: 8px; border-width: 0 2px 2px 0; }
 
-  /* Level meter */
   .motion-bar-wrapper {
     padding: 2px 8px 4px;
-    position: absolute;
-    bottom: 12px;
-    left: 12px;
-    right: 12px;
-    background: rgba(10,10,15,0.7);
-    border-radius: 6px;
-    backdrop-filter: blur(4px);
+    position: absolute; bottom: 12px; left: 12px; right: 12px;
+    background: rgba(10,10,15,0.7); border-radius: 6px; backdrop-filter: blur(4px);
   }
+  .motion-bar-label { font-family: 'Space Mono', monospace; font-size: 9px; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 3px; }
+  .motion-bar-track { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .motion-bar-fill { height: 100%; width: 0%; border-radius: 2px; background: linear-gradient(90deg, var(--accent), #00ccff); transition: width 0.1s, background 0.2s; }
+  .motion-bar-fill.high { background: linear-gradient(90deg, #ffaa00, var(--accent2)); }
 
-  .motion-bar-label {
-    font-family: 'Space Mono', monospace;
-    font-size: 9px;
-    color: var(--muted);
-    letter-spacing: 0.1em;
-    margin-bottom: 3px;
-  }
-
-  .motion-bar-track {
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-
-  .motion-bar-fill {
-    height: 100%;
-    width: 0%;
-    border-radius: 2px;
-    background: linear-gradient(90deg, var(--accent), #00ccff);
-    transition: width 0.1s, background 0.2s;
-  }
-
-  .motion-bar-fill.high {
-    background: linear-gradient(90deg, #ffaa00, var(--accent2));
-  }
-
-  /* Video player panel */
-  .video-panel {
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    background: var(--panel);
-    overflow: hidden;
-  }
+  .video-panel { border-radius: 12px; border: 1px solid var(--border); background: var(--panel); overflow: hidden; }
 
   .video-panel-header {
     padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--border); flex-wrap: wrap;
   }
+  .video-panel-header span { font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 
-  .video-panel-header span {
-    font-family: 'Space Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
+  .indicator { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); transition: all 0.3s; }
+  .indicator.playing { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+  .indicator.rec { background: var(--accent2); box-shadow: 0 0 8px var(--accent2); animation: blink 0.6s ease-in-out infinite alternate; }
 
-  .indicator {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--muted);
-    transition: all 0.3s;
-  }
+  #videoPlayer { width: 100%; aspect-ratio: 16/9; display: block; background: #000; }
 
-  .indicator.playing {
-    background: var(--accent);
-    box-shadow: 0 0 8px var(--accent);
-  }
-
-  #videoPlayer {
-    width: 100%;
-    aspect-ratio: 16/9;
-    display: block;
-    background: #000;
-  }
-
-  /* Upload zone */
   .upload-zone {
-    margin: 16px;
-    border: 1.5px dashed var(--border);
-    border-radius: 8px;
-    padding: 28px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
+    margin: 16px; border: 1.5px dashed var(--border); border-radius: 8px;
+    padding: 28px; text-align: center; cursor: pointer; transition: all 0.2s;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
   }
-
-  .upload-zone:hover, .upload-zone.drag {
-    border-color: var(--accent);
-    background: rgba(0,255,136,0.03);
-  }
-
-  .upload-icon {
-    font-size: 28px;
-    opacity: 0.5;
-  }
-
-  .upload-zone p {
-    font-size: 13px;
-    color: var(--muted);
-  }
-
-  .upload-zone strong {
-    color: var(--accent);
-    font-weight: 600;
-  }
-
+  .upload-zone:hover, .upload-zone.drag { border-color: var(--accent); background: rgba(0,255,136,0.03); }
+  .upload-icon { font-size: 28px; opacity: 0.5; }
+  .upload-zone p { font-size: 13px; color: var(--muted); }
+  .upload-zone strong { color: var(--accent); font-weight: 600; }
   #videoFileInput { display: none; }
 
-  /* Controls */
-  .controls {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+  /* Recordings */
+  .recordings-panel { border-radius: 12px; border: 1px solid var(--border); background: var(--panel); overflow: hidden; }
+
+  .recordings-header {
+    padding: 12px 16px;
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--border);
   }
+  .recordings-header > span:first-of-type { font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+
+  .badge-count { background: var(--accent); color: #000; font-family: 'Space Mono', monospace; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; }
+
+  .recordings-list { max-height: 220px; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+  .recordings-list:empty::after {
+    content: 'Aucun enregistrement pour le moment';
+    display: block; text-align: center; padding: 20px;
+    font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted);
+  }
+
+  .recording-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 8px; transition: border-color 0.2s;
+  }
+  .recording-item:hover { border-color: var(--accent); }
+  .recording-icon { font-size: 18px; flex-shrink: 0; }
+  .recording-info { flex: 1; min-width: 0; }
+  .recording-name { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .recording-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .btn-dl { font-family: 'Space Mono', monospace; font-size: 10px; padding: 5px 10px; border-radius: 5px; border: 1px solid var(--accent); background: rgba(0,255,136,0.08); color: var(--accent); cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: all 0.2s; text-decoration: none; }
+  .btn-dl:hover { background: rgba(0,255,136,0.18); }
+
+  .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
   .btn {
-    font-family: 'Space Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 14px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    background: var(--panel);
-    color: var(--text);
-    cursor: pointer;
-    transition: all 0.2s;
+    font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 0.08em;
+    text-transform: uppercase; padding: 14px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--panel); color: var(--text);
+    cursor: pointer; transition: all 0.2s;
   }
+  .btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,255,136,0.05); }
+  .btn.primary { border-color: var(--accent); color: var(--accent); background: rgba(0,255,136,0.08); }
+  .btn.primary:hover { background: rgba(0,255,136,0.15); box-shadow: 0 0 20px rgba(0,255,136,0.1); }
+  .btn.danger { border-color: var(--accent2); color: var(--accent2); background: rgba(255,56,96,0.08); }
+  .btn.warning { border-color: var(--accent3); color: var(--accent3); background: rgba(255,170,0,0.08); }
+  .btn.warning:hover { background: rgba(255,170,0,0.15); }
+  .btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-  .btn:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-    background: rgba(0,255,136,0.05);
-  }
-
-  .btn.primary {
-    border-color: var(--accent);
-    color: var(--accent);
-    background: rgba(0,255,136,0.08);
-  }
-
-  .btn.primary:hover {
-    background: rgba(0,255,136,0.15);
-    box-shadow: 0 0 20px rgba(0,255,136,0.1);
-  }
-
-  .btn.danger {
-    border-color: var(--accent2);
-    color: var(--accent2);
-    background: rgba(255,56,96,0.08);
-  }
-
-  .btn:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-  }
-
-  /* Sensitivity slider */
   .slider-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 16px;
-    background: var(--panel);
-    border-radius: 8px;
-    border: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+    background: var(--panel); border-radius: 8px; border: 1px solid var(--border);
   }
+  .slider-row label { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: var(--muted); white-space: nowrap; text-transform: uppercase; min-width: 90px; }
+  input[type=range] { flex: 1; -webkit-appearance: none; height: 3px; background: var(--border); border-radius: 2px; outline: none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px rgba(0,255,136,0.5); cursor: pointer; }
+  .slider-value { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--accent); min-width: 30px; text-align: right; }
 
-  .slider-row label {
-    font-family: 'Space Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    color: var(--muted);
-    white-space: nowrap;
-    text-transform: uppercase;
-    min-width: 90px;
-  }
-
-  input[type=range] {
-    flex: 1;
-    -webkit-appearance: none;
-    height: 3px;
-    background: var(--border);
-    border-radius: 2px;
-    outline: none;
-  }
-
-  input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 14px; height: 14px;
-    border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 8px rgba(0,255,136,0.5);
-    cursor: pointer;
-  }
-
-  .slider-value {
-    font-family: 'Space Mono', monospace;
-    font-size: 11px;
-    color: var(--accent);
-    min-width: 30px;
-    text-align: right;
-  }
-
-  /* Log */
   .log {
-    font-family: 'Space Mono', monospace;
-    font-size: 10px;
-    color: var(--muted);
-    padding: 12px 16px;
-    background: var(--panel);
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    height: 60px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column-reverse;
-    gap: 3px;
+    font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted);
+    padding: 12px 16px; background: var(--panel); border-radius: 8px;
+    border: 1px solid var(--border); height: 80px; overflow-y: auto;
+    display: flex; flex-direction: column-reverse; gap: 3px;
   }
-
   .log-entry { opacity: 0.8; }
   .log-entry.alert { color: var(--accent2); opacity: 1; }
   .log-entry.ok { color: var(--accent); opacity: 1; }
 
-  /* Start screen */
   #startScreen {
-    position: absolute;
-    inset: 0;
+    position: absolute; inset: 0;
     background: rgba(10,10,15,0.92);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    border-radius: 12px;
-    z-index: 10;
-    backdrop-filter: blur(4px);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 16px; border-radius: 12px; z-index: 10; backdrop-filter: blur(4px);
   }
-
-  #startScreen p {
-    font-size: 13px;
-    color: var(--muted);
-    text-align: center;
-    padding: 0 24px;
-  }
-
-  #startScreen h2 {
-    font-family: 'Space Mono', monospace;
-    font-size: 14px;
-    letter-spacing: 0.1em;
-    color: var(--text);
-  }
+  #startScreen p { font-size: 13px; color: var(--muted); text-align: center; padding: 0 24px; }
+  #startScreen h2 { font-family: 'Space Mono', monospace; font-size: 14px; letter-spacing: 0.1em; color: var(--text); }
 
   .start-btn {
-    font-family: 'Space Mono', monospace;
-    font-size: 12px;
-    letter-spacing: 0.1em;
-    padding: 14px 28px;
-    background: var(--accent);
-    color: #000;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 700;
-    text-transform: uppercase;
-    transition: all 0.2s;
+    font-family: 'Space Mono', monospace; font-size: 12px; letter-spacing: 0.1em;
+    padding: 14px 28px; background: var(--accent); color: #000;
+    border: none; border-radius: 8px; cursor: pointer; font-weight: 700;
+    text-transform: uppercase; transition: all 0.2s;
   }
+  .start-btn:hover { transform: scale(1.04); box-shadow: 0 0 24px rgba(0,255,136,0.4); }
 
-  .start-btn:hover {
-    transform: scale(1.04);
-    box-shadow: 0 0 24px rgba(0,255,136,0.4);
-  }
-
-  /* Cooldown badge */
   #cooldownBadge {
-    display: none;
-    font-family: 'Space Mono', monospace;
-    font-size: 10px;
-    color: var(--muted);
-    padding: 3px 8px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    margin-left: auto;
+    display: none; font-family: 'Space Mono', monospace; font-size: 10px;
+    color: var(--muted); padding: 3px 8px; border: 1px solid var(--border); border-radius: 4px;
   }
+
+  .notice { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); padding: 10px 14px; background: var(--panel); border-radius: 8px; border: 1px solid var(--border); line-height: 1.7; }
+  .notice.warn { border-color: var(--accent3); color: var(--accent3); }
 </style>
 </head>
 <body>
@@ -486,21 +295,22 @@
     <video id="cameraFeed" autoplay playsinline muted></video>
     <canvas id="diffCanvas"></canvas>
     <div class="motion-overlay" id="motionOverlay"></div>
-    <div class="corner tl"></div>
-    <div class="corner tr"></div>
-    <div class="corner bl"></div>
-    <div class="corner br"></div>
+    <div class="rec-badge" id="recBadge"><div class="rec-dot"></div><span id="recTimer">REC 0s</span></div>
+    <div class="corner tl"></div><div class="corner tr"></div>
+    <div class="corner bl"></div><div class="corner br"></div>
     <div class="motion-bar-wrapper">
       <div class="motion-bar-label">NIVEAU DE MOUVEMENT</div>
-      <div class="motion-bar-track">
-        <div class="motion-bar-fill" id="motionBar"></div>
-      </div>
+      <div class="motion-bar-track"><div class="motion-bar-fill" id="motionBar"></div></div>
     </div>
     <div id="startScreen">
       <h2>CAMÉRA REQUISE</h2>
       <p>Autorisez l'accès à la caméra pour activer la détection de mouvement.</p>
       <button class="start-btn" onclick="startCamera()">ACTIVER LA CAMÉRA</button>
     </div>
+  </div>
+
+  <div class="notice warn" id="recNotice" style="display:none">
+    ⚠ Enregistrement vidéo non supporté sur ce navigateur. La détection et la lecture de vidéo fonctionnent quand même. Pour l'enregistrement, utilisez Safari 14.5+ sur iOS.
   </div>
 
   <!-- Video player -->
@@ -510,9 +320,7 @@
       <span>Vidéo déclenchée</span>
       <span id="cooldownBadge">cooldown</span>
     </div>
-    <video id="videoPlayer" controls loop playsinline>
-      <source src="" type="video/mp4">
-    </video>
+    <video id="videoPlayer" controls loop playsinline></video>
     <div class="upload-zone" id="uploadZone" onclick="document.getElementById('videoFileInput').click()">
       <div class="upload-icon">🎬</div>
       <p><strong>Choisir une vidéo</strong></p>
@@ -521,23 +329,37 @@
     </div>
   </div>
 
-  <!-- Sensitivity -->
+  <!-- Recordings list -->
+  <div class="recordings-panel">
+    <div class="recordings-header">
+      <span>Enregistrements caméra</span>
+      <span class="badge-count" id="recCount">0</span>
+      <button class="btn warning" style="margin-left:auto;padding:6px 12px;font-size:10px" onclick="exportLog()">💾 EXPORTER LOG</button>
+    </div>
+    <div class="recordings-list" id="recordingsList"></div>
+  </div>
+
+  <!-- Sliders -->
   <div class="slider-row">
     <label>Sensibilité</label>
     <input type="range" id="sensitivitySlider" min="1" max="100" value="20">
     <span class="slider-value" id="sensitivityValue">20</span>
   </div>
-
   <div class="slider-row">
     <label>Cooldown (s)</label>
     <input type="range" id="cooldownSlider" min="2" max="30" value="5">
     <span class="slider-value" id="cooldownValue">5s</span>
   </div>
+  <div class="slider-row">
+    <label>Durée REC (s)</label>
+    <input type="range" id="recDurSlider" min="5" max="60" value="15">
+    <span class="slider-value" id="recDurValue">15s</span>
+  </div>
 
   <!-- Controls -->
   <div class="controls">
     <button class="btn primary" id="toggleBtn" onclick="toggleDetection()" disabled>DÉMARRER</button>
-    <button class="btn" id="testBtn" onclick="testTrigger()">TEST DÉCLENCHEMENT</button>
+    <button class="btn" onclick="testTrigger()">TEST DÉCLENCHEMENT</button>
   </div>
 
   <!-- Log -->
@@ -548,17 +370,27 @@
 </div>
 
 <script>
-  const video = document.getElementById('cameraFeed');
-  const canvas = document.getElementById('diffCanvas');
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  const videoPlayer = document.getElementById('videoPlayer');
-  const motionBar = document.getElementById('motionBar');
+  const video         = document.getElementById('cameraFeed');
+  const canvas        = document.getElementById('diffCanvas');
+  const ctx           = canvas.getContext('2d', { willReadFrequently: true });
+  const videoPlayer   = document.getElementById('videoPlayer');
+  const motionBar     = document.getElementById('motionBar');
   const motionOverlay = document.getElementById('motionOverlay');
-  const statusPill = document.getElementById('statusPill');
+  const statusPill    = document.getElementById('statusPill');
   const playIndicator = document.getElementById('playIndicator');
-  const toggleBtn = document.getElementById('toggleBtn');
-  const logBox = document.getElementById('logBox');
+  const toggleBtn     = document.getElementById('toggleBtn');
+  const logBox        = document.getElementById('logBox');
   const cooldownBadge = document.getElementById('cooldownBadge');
+  const recBadge      = document.getElementById('recBadge');
+  const recTimerEl    = document.getElementById('recTimer');
+  const recList       = document.getElementById('recordingsList');
+  const recCountEl    = document.getElementById('recCount');
+  const recDurSlider  = document.getElementById('recDurSlider');
+  const recDurValue   = document.getElementById('recDurValue');
+  const sensSlider    = document.getElementById('sensitivitySlider');
+  const sensValue     = document.getElementById('sensitivityValue');
+  const coolSlider    = document.getElementById('cooldownSlider');
+  const coolValue     = document.getElementById('cooldownValue');
 
   let stream = null;
   let detecting = false;
@@ -567,22 +399,22 @@
   let cooldown = false;
   let cooldownTimer = null;
   let videoLoaded = false;
-
-  // Sliders
-  const sensSlider = document.getElementById('sensitivitySlider');
-  const sensValue = document.getElementById('sensitivityValue');
-  const coolSlider = document.getElementById('cooldownSlider');
-  const coolValue = document.getElementById('cooldownValue');
+  let mediaRecorder = null;
+  let recordingChunks = [];
+  let recElapsedTimer = null;
+  let recElapsed = 0;
+  let canRecord = false;
+  let logEntries = [];
+  let recTotal = 0;
 
   sensSlider.addEventListener('input', () => { sensValue.textContent = sensSlider.value; });
   coolSlider.addEventListener('input', () => { coolValue.textContent = coolSlider.value + 's'; });
+  recDurSlider.addEventListener('input', () => { recDurValue.textContent = recDurSlider.value + 's'; });
 
-  // File input
   document.getElementById('videoFileInput').addEventListener('change', e => {
     const file = e.target.files[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
-    videoPlayer.src = url;
+    videoPlayer.src = URL.createObjectURL(file);
     videoPlayer.load();
     videoLoaded = true;
     document.getElementById('uploadZone').style.display = 'none';
@@ -590,17 +422,14 @@
     if (stream) toggleBtn.disabled = false;
   });
 
-  // Drag and drop
   const uploadZone = document.getElementById('uploadZone');
   uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag'); });
   uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag'));
   uploadZone.addEventListener('drop', e => {
-    e.preventDefault();
-    uploadZone.classList.remove('drag');
+    e.preventDefault(); uploadZone.classList.remove('drag');
     const file = e.dataTransfer.files[0];
     if (file && file.type.startsWith('video/')) {
-      const url = URL.createObjectURL(file);
-      videoPlayer.src = url;
+      videoPlayer.src = URL.createObjectURL(file);
       videoPlayer.load();
       videoLoaded = true;
       uploadZone.style.display = 'none';
@@ -609,21 +438,43 @@
     }
   });
 
+  // ── Helpers ──────────────────────────────────────────────────────
+  function dateStamp() {
+    const now = new Date();
+    const p = n => String(n).padStart(2, '0');
+    return now.getFullYear() + '-' + p(now.getMonth()+1) + '-' + p(now.getDate()) +
+           '_' + p(now.getHours()) + 'h' + p(now.getMinutes()) + 'm' + p(now.getSeconds()) + 's';
+  }
+
+  // ── Camera ───────────────────────────────────────────────────────
   async function startCamera() {
     try {
       stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } },
-        audio: false
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: true
       });
       video.srcObject = stream;
+
+      // Test MediaRecorder support
+      if (typeof MediaRecorder !== 'undefined') {
+        const mime = MediaRecorder.isTypeSupported('video/mp4') ? 'video/mp4'
+                   : MediaRecorder.isTypeSupported('video/webm;codecs=vp8') ? 'video/webm;codecs=vp8'
+                   : MediaRecorder.isTypeSupported('video/webm') ? 'video/webm' : '';
+        canRecord = mime !== '';
+        if (canRecord) window._recMime = mime;
+      }
+
+      if (!canRecord) {
+        document.getElementById('recNotice').style.display = 'block';
+        log('⚠ Enregistrement non disponible sur ce navigateur', 'alert');
+      } else {
+        log('Caméra activée — enregistrement prêt (' + window._recMime + ')', 'ok');
+      }
+
       document.getElementById('startScreen').style.display = 'none';
-      log('Caméra activée', 'ok');
       statusPill.textContent = 'CAMÉRA OK';
       statusPill.classList.add('active');
-      if (videoLoaded) toggleBtn.disabled = false;
-      else {
-        toggleBtn.disabled = false; // allow start even without video (will show alert)
-      }
+      toggleBtn.disabled = false;
     } catch (err) {
       log('Erreur caméra : ' + err.message, 'alert');
       document.getElementById('startScreen').querySelector('p').textContent =
@@ -631,43 +482,33 @@
     }
   }
 
+  // ── Detection ────────────────────────────────────────────────────
   function toggleDetection() {
     if (!detecting) {
-      if (!videoLoaded) {
-        log('⚠ Chargez d\'abord une vidéo !', 'alert');
-        return;
-      }
-      detecting = true;
-      prevData = null;
+      if (!videoLoaded) { log('⚠ Chargez d\'abord une vidéo !', 'alert'); return; }
+      detecting = true; prevData = null;
       toggleBtn.textContent = 'ARRÊTER';
       toggleBtn.classList.add('danger');
       statusPill.textContent = 'SURVEILLANCE';
-      statusPill.classList.remove('active');
-      statusPill.classList.add('active');
+      statusPill.className = 'status-pill active';
       log('Détection démarrée', 'ok');
       detectLoop();
     } else {
-      stopDetection();
+      detecting = false;
+      if (animFrame) cancelAnimationFrame(animFrame);
+      toggleBtn.textContent = 'DÉMARRER';
+      toggleBtn.classList.remove('danger');
+      statusPill.textContent = 'PAUSE';
+      statusPill.classList.remove('motion');
+      motionBar.style.width = '0%';
+      log('Détection arrêtée', '');
     }
-  }
-
-  function stopDetection() {
-    detecting = false;
-    if (animFrame) cancelAnimationFrame(animFrame);
-    toggleBtn.textContent = 'DÉMARRER';
-    toggleBtn.classList.remove('danger');
-    statusPill.textContent = 'PAUSE';
-    statusPill.classList.remove('motion');
-    motionBar.style.width = '0%';
-    log('Détection arrêtée', '');
   }
 
   function detectLoop() {
     if (!detecting) return;
-
     const W = 160, H = 90;
     canvas.width = W; canvas.height = H;
-
     ctx.drawImage(video, 0, 0, W, H);
     const frame = ctx.getImageData(0, 0, W, H);
 
@@ -675,31 +516,27 @@
       let diff = 0;
       const len = frame.data.length;
       for (let i = 0; i < len; i += 4) {
-        const dr = Math.abs(frame.data[i]   - prevData[i]);
-        const dg = Math.abs(frame.data[i+1] - prevData[i+1]);
-        const db = Math.abs(frame.data[i+2] - prevData[i+2]);
-        diff += (dr + dg + db) / 3;
+        diff += (Math.abs(frame.data[i]   - prevData[i]) +
+                 Math.abs(frame.data[i+1] - prevData[i+1]) +
+                 Math.abs(frame.data[i+2] - prevData[i+2])) / 3;
       }
-      const pixels = W * H;
-      const avg = diff / pixels; // 0-255
+      const avg = diff / (W * H);
       const pct = Math.min(100, (avg / 255) * 100 * 8);
-
       motionBar.style.width = pct + '%';
       motionBar.classList.toggle('high', pct > 50);
 
-      const threshold = (101 - sensSlider.value) * 0.3; // lower = more sensitive
-      if (avg > threshold && !cooldown) {
-        triggerMotion();
-      }
+      if (avg > (101 - sensSlider.value) * 0.3 && !cooldown) triggerMotion();
     }
 
     prevData = frame.data.slice();
     animFrame = requestAnimationFrame(detectLoop);
   }
 
+  // ── Trigger ──────────────────────────────────────────────────────
   function triggerMotion() {
     cooldown = true;
-    log('🔴 MOUVEMENT DÉTECTÉ — vidéo déclenchée', 'alert');
+    const stamp = dateStamp();
+    log('🔴 MOUVEMENT DÉTECTÉ — ' + stamp, 'alert');
 
     statusPill.textContent = 'MOUVEMENT !';
     statusPill.className = 'status-pill motion';
@@ -707,21 +544,20 @@
     motionOverlay.classList.add('triggered');
     setTimeout(() => motionOverlay.classList.remove('triggered'), 800);
 
-    // Play video
+    // Play trigger video
     videoPlayer.currentTime = 0;
-    videoPlayer.play().catch(e => log('Lecture : ' + e.message, 'alert'));
+    videoPlayer.play().catch(e => log('Lecture vidéo : ' + e.message, 'alert'));
     playIndicator.classList.add('playing');
+    videoPlayer.onended = () => playIndicator.classList.remove('playing');
 
-    videoPlayer.onended = () => {
-      playIndicator.classList.remove('playing');
-    };
+    // Record camera
+    if (canRecord) startRecording(stamp);
 
     // Cooldown
     const cd = parseInt(coolSlider.value);
     cooldownBadge.style.display = 'block';
     let remaining = cd;
     cooldownBadge.textContent = 'cooldown ' + remaining + 's';
-
     cooldownTimer = setInterval(() => {
       remaining--;
       cooldownBadge.textContent = 'cooldown ' + remaining + 's';
@@ -736,27 +572,107 @@
     }, 1000);
   }
 
+  // ── Recording ────────────────────────────────────────────────────
+  function startRecording(stamp) {
+    if (mediaRecorder && mediaRecorder.state === 'recording') return;
+
+    recordingChunks = [];
+    const mimeType = window._recMime || 'video/webm';
+    const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+    const fileName = 'mouvement-' + stamp + '.' + ext;
+
+    try {
+      mediaRecorder = new MediaRecorder(stream, { mimeType });
+    } catch(e) {
+      try { mediaRecorder = new MediaRecorder(stream); } catch(e2) {
+        log('Impossible de démarrer l\'enregistrement', 'alert'); return;
+      }
+    }
+
+    mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) recordingChunks.push(e.data); };
+
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(recordingChunks, { type: mimeType });
+      const url  = URL.createObjectURL(blob);
+      const size = (blob.size / 1024 / 1024).toFixed(1) + ' MB';
+      addRecordingItem(fileName, url, size);
+      log('✅ Enregistré : ' + fileName + ' (' + size + ')', 'ok');
+      recBadge.classList.remove('visible');
+      clearInterval(recElapsedTimer);
+      playIndicator.classList.remove('rec');
+    };
+
+    mediaRecorder.start(500);
+    playIndicator.classList.add('rec');
+    recBadge.classList.add('visible');
+    recElapsed = 0;
+    recTimerEl.textContent = 'REC 0s';
+    recElapsedTimer = setInterval(() => { recElapsed++; recTimerEl.textContent = 'REC ' + recElapsed + 's'; }, 1000);
+
+    setTimeout(() => {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+        log('Enregistrement terminé (' + recDurSlider.value + 's)', '');
+      }
+    }, parseInt(recDurSlider.value) * 1000);
+  }
+
+  function addRecordingItem(name, url, size) {
+    recTotal++;
+    recCountEl.textContent = recTotal;
+    const now = new Date();
+    const time = now.toLocaleTimeString('fr', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    const item = document.createElement('div');
+    item.className = 'recording-item';
+    item.innerHTML =
+      '<div class="recording-icon">🎥</div>' +
+      '<div class="recording-info">' +
+        '<div class="recording-name">' + name + '</div>' +
+        '<div class="recording-meta">' + time + ' · ' + size + '</div>' +
+      '</div>' +
+      '<a class="btn-dl" href="' + url + '" download="' + name + '">⬇ Télécharger</a>';
+
+    recList.insertBefore(item, recList.firstChild);
+  }
+
+  // ── Log export ───────────────────────────────────────────────────
+  function exportLog() {
+    if (logEntries.length === 0) { log('⚠ Aucun log à exporter', 'alert'); return; }
+    const stamp    = dateStamp();
+    const fileName = 'log-mouvement-' + stamp + '.txt';
+    const content  = '=== Motion Trigger — Journal d\'activité ===\n' +
+                     'Exporté le : ' + new Date().toLocaleString('fr') + '\n' +
+                     '==========================================\n\n' +
+                     [...logEntries].reverse().join('\n');
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: fileName });
+    a.click();
+    URL.revokeObjectURL(a.href);
+    log('Log exporté : ' + fileName, 'ok');
+  }
+
+  // ── Test ─────────────────────────────────────────────────────────
   function testTrigger() {
-    if (!videoLoaded) {
-      log('⚠ Chargez d\'abord une vidéo !', 'alert');
-      return;
-    }
-    if (cooldown) {
-      log('En cooldown, patientez...', '');
-      return;
-    }
+    if (!videoLoaded) { log('⚠ Chargez d\'abord une vidéo !', 'alert'); return; }
+    if (cooldown) { log('En cooldown, patientez...', ''); return; }
     log('TEST manuel déclenché', 'ok');
     triggerMotion();
   }
 
+  // ── Log ──────────────────────────────────────────────────────────
   function log(msg, type = '') {
+    const now  = new Date();
+    const p    = n => String(n).padStart(2, '0');
+    const time = p(now.getHours()) + ':' + p(now.getMinutes()) + ':' + p(now.getSeconds());
+    const full = '[' + now.toLocaleDateString('fr') + ' ' + time + '] ' + msg;
+    logEntries.push(full);
+
     const entry = document.createElement('div');
     entry.className = 'log-entry' + (type ? ' ' + type : '');
-    const time = new Date().toLocaleTimeString('fr', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     entry.textContent = '[' + time + '] ' + msg;
     logBox.insertBefore(entry, logBox.firstChild);
-    // Keep log short
-    while (logBox.children.length > 20) logBox.removeChild(logBox.lastChild);
+    while (logBox.children.length > 30) logBox.removeChild(logBox.lastChild);
   }
 </script>
 </body>
